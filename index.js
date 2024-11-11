@@ -3,49 +3,101 @@ const express = require('express')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 const app = express()
-
+app.use(express.json())
+app.use(express.urlencoded({extended:false}))
 app.set('view engine', 'ejs')
 
 app.get('/', async (req, res) => {
     res.render('index.ejs')
 })
 
-app.get('/subscribe', async (req, res) => {
-    const plan = req.query.plan
+// app.get('/subscribe', async (req, res) => {
+//     const plan = req.query.plan
 
-    if (!plan) {
-        return res.send('Subscription plan not found')
+//     if (!plan) {
+//         return res.send('Subscription plan not found')
+//     }
+
+//     let priceId
+
+//     switch (plan.toLowerCase()) {
+//         case 'starter': 
+//             priceId = 'price_1QJANaCfLWrjW8WUzUHV6UZ8'
+//             break
+
+//         case 'pro':
+//             priceId = 'price_1QJANqCfLWrjW8WUsRz58YSd'
+//             break
+
+//         default:
+//             return res.send('Subscription plan not found')
+//     }
+
+//     const session = await stripe.checkout.sessions.create({
+//         mode: 'subscription',
+//         line_items: [
+//             {
+//                 price: priceId,
+//                 quantity: 1
+//             }
+//         ],
+//         success_url: `${process.env.BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+//         cancel_url: `${process.env.BASE_URL}/cancel`
+//     })
+
+//     res.redirect(session.url)
+// })
+
+
+
+app.post('/subscribe', async (req, res) => {
+  
+    
+    const { planName, amount } = req.body;
+
+    if (!planName || !amount ) {
+        return res.status(400).json({ error: 'Missing required fields: planName, amount, or duration' });
     }
 
-    let priceId
-
-    switch (plan.toLowerCase()) {
-        case 'starter': 
-            priceId = 'price_1QJANaCfLWrjW8WUzUHV6UZ8'
-            break
-
-        case 'pro':
-            priceId = 'price_1QJANqCfLWrjW8WUsRz58YSd'
-            break
-
-        default:
-            return res.send('Subscription plan not found')
+  
+    const intervalCount = 1
+    if (isNaN(amount) || isNaN(intervalCount) || intervalCount <= 0) {
+        return res.status(400).json({ error: 'Invalid amount or duration format' });
     }
 
-    const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
-        line_items: [
-            {
-                price: priceId,
-                quantity: 1
-            }
-        ],
-        success_url: `${process.env.BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.BASE_URL}/cancel`
-    })
+    try {
+        const product = await stripe.products.create({ name: planName });
 
-    res.redirect(session.url)
-})
+        const price = await stripe.prices.create({
+            unit_amount: parseInt(amount) * 100,
+            currency: 'usd',
+            recurring: {
+                interval: 'month',
+                interval_count: intervalCount,
+            },
+            product: product.id,
+        });
+
+        const session = await stripe.checkout.sessions.create({
+            mode: 'subscription',
+            line_items: [
+                {
+                    price: price.id,
+                    quantity: 1,
+                },
+            ],
+      
+            
+            success_url: `${process.env.BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.BASE_URL}/cancel`,
+        });
+       
+        res.json({ url: session.url });
+    } catch (error) {
+        console.error('Error creating subscription:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 app.get('/success', async (req, res) => {
     //const session = await stripe.checkout.sessions.retrieve(req.query.session_id, { expand: ['subscription', 'subscription.plan.product'] })
@@ -76,6 +128,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
     } catch (err) {
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
+  console.log(event.type);
   
     // Handle the event
     switch (event.type) {
