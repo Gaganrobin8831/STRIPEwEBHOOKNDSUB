@@ -3,6 +3,16 @@ const express = require('express')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 const app = express()
+
+const session = require('express-session');
+
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } 
+}));
+
 const cors = require('cors') // Import the cors package
 
 // Set up CORS to allow requests from http://localhost:3000
@@ -97,7 +107,7 @@ app.post('/subscribe', async (req, res) => {
             success_url: `https://subscription-6d1n.onrender.com/payment-success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `https://subscription-6d1n.onrender.com/payment-failed`,
         });
-        localStorage.setItem("redirectedFromPayment", "true")
+        req.session.redirectedFromPayment = true;
 //     res.redirect(session.url)
         res.json({ url: session.url });
     } catch (error) {
