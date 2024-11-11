@@ -3,6 +3,12 @@ const express = require('express')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 const app = express()
+const cors = require('cors') // Import the cors package
+
+// Set up CORS to allow requests from http://localhost:3000
+app.use(cors({
+    origin: 'http://localhost:3000'
+}))
 app.use(express.json())
 app.use(express.urlencoded({extended:false}))
 app.set('view engine', 'ejs')
