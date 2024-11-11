@@ -61,22 +61,30 @@ app.get('/', async (req, res) => {
 
 
 app.post('/subscribe', async (req, res) => {
-  
-    
     const { planName, amount } = req.body;
 
-    if (!planName || !amount ) {
-        return res.status(400).json({ error: 'Missing required fields: planName, amount, or duration' });
+    if (!planName || !amount) {
+        return res.status(400).json({ error: 'Missing required fields: planName or amount' });
     }
 
-  
-    const intervalCount = 1
+    const intervalCount = 1;
     if (isNaN(amount) || isNaN(intervalCount) || intervalCount <= 0) {
-        return res.status(400).json({ error: 'Invalid amount or duration format' });
+        return res.status(400).json({ error: 'Invalid amount or interval count format' });
     }
 
     try {
-        const product = await stripe.products.create({ name: planName });
+   
+        let product;
+        const products = await stripe.products.list({
+            limit: 5
+        });
+
+        product = products.data.find(p => p.name.toLowerCase() === planName.toLowerCase());
+
+        
+        if (!product) {
+            product = await stripe.products.create({ name: planName });
+        }
 
         const price = await stripe.prices.create({
             unit_amount: parseInt(amount) * 100,
@@ -88,6 +96,7 @@ app.post('/subscribe', async (req, res) => {
             product: product.id,
         });
 
+       
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
             line_items: [
@@ -96,19 +105,17 @@ app.post('/subscribe', async (req, res) => {
                     quantity: 1,
                 },
             ],
-      
-            
             success_url: `https://subscription-6d1n.onrender.com/payment-success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `https://subscription-6d1n.onrender.com/payment-failed`,
         });
-        
-//     res.redirect(session.url)
+
         res.json({ url: session.url });
     } catch (error) {
         console.error('Error creating subscription:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 app.get('/success', async (req, res) => {
     //const session = await stripe.checkout.sessions.retrieve(req.query.session_id, { expand: ['subscription', 'subscription.plan.product'] })
