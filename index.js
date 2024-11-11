@@ -69,18 +69,14 @@ app.post('/subscribe', async (req, res) => {
 
     const intervalCount = 1;
     if (isNaN(amount) || isNaN(intervalCount) || intervalCount <= 0) {
-        return res.status(400).json({ error: 'Invalid amount or interval count format' });
+        return res.status(400).json({ error: 'Invalid amount or duration format' });
     }
 
     try {
-   
-        let product;
-        const products = await stripe.products.list({
-            limit: 5
-        });
-
-        product = products.data.find(p => p.name.toLowerCase() === planName.toLowerCase());
-
+       
+        const products = await stripe.products.list({ limit: 100 });
+        let product = products.data.find((p) => p.name === planName && p.active);
+        // console.log(products);
         
         if (!product) {
             product = await stripe.products.create({ name: planName });
@@ -96,7 +92,6 @@ app.post('/subscribe', async (req, res) => {
             product: product.id,
         });
 
-       
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
             line_items: [
