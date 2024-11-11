@@ -6,12 +6,6 @@ const app = express()
 
 const session = require('express-session');
 
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false } 
-}));
 
 const cors = require('cors') // Import the cors package
 
@@ -107,7 +101,7 @@ app.post('/subscribe', async (req, res) => {
             success_url: `https://subscription-6d1n.onrender.com/payment-success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `https://subscription-6d1n.onrender.com/payment-failed`,
         });
-        req.session.redirectedFromPayment = true;
+        
 //     res.redirect(session.url)
         res.json({ url: session.url });
     } catch (error) {
