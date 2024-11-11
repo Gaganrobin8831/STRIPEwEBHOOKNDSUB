@@ -97,7 +97,7 @@ app.post('/subscribe', async (req, res) => {
             success_url: `https://subscription-6d1n.onrender.com/payment-success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `https://subscription-6d1n.onrender.com/payment-failed`,
         });
-        sessionStorage.setItem("redirectedFromPayment", "true")
+        localStorage.setItem("redirectedFromPayment", "true")
 //     res.redirect(session.url)
         res.json({ url: session.url });
     } catch (error) {
