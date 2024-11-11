@@ -7,9 +7,8 @@ const cors = require('cors') // Import the cors package
 
 // Set up CORS to allow requests from http://localhost:3000
 app.use(cors({
-    origin: 'https://get-subscription.onrender.com',
-    
-}))
+    origin: ['http://localhost:3000', 'https://get-subscription.onrender.com']
+}));
 app.use(express.json())
 app.use(express.urlencoded({extended:false}))
 app.set('view engine', 'ejs')
