@@ -7,7 +7,8 @@ const cors = require('cors') // Import the cors package
 
 // Set up CORS to allow requests from http://localhost:3000
 app.use(cors({
-    origin: 'http://localhost:3000'
+    origin: 'https://get-subscription.onrender.com',
+    
 }))
 app.use(express.json())
 app.use(express.urlencoded({extended:false}))
@@ -94,10 +95,11 @@ app.post('/subscribe', async (req, res) => {
             ],
       
             
-            success_url: `${process.env.BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.BASE_URL}/cancel`,
+            success_url: `https://get-subscription.onrender.com/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `https://get-subscription.onrender.com/payment-failed`,
         });
        
+//     res.redirect(session.url)
         res.json({ url: session.url });
     } catch (error) {
         console.error('Error creating subscription:', error);
