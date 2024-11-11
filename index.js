@@ -8,7 +8,7 @@ app.use(express.urlencoded({extended:false}))
 app.set('view engine', 'ejs')
 
 app.get('/', async (req, res) => {
-    res.render('index.ejs')
+    res.send("Hello World")
 })
 
 // app.get('/subscribe', async (req, res) => {
